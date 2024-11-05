@@ -12,5 +12,5 @@
 ### 案例
 删除缓存  
 python -H No1 -o del_cache -d xxx
-添加白名单
+添加白名单  
 python -H No1 -o add_while -w server -i 127.0.0.1,test
