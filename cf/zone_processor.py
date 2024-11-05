@@ -41,4 +41,4 @@ class ZoneProcessor:
         self.rule_manager.add_init_param(zone)
 
     def add_while(self, while_list, ip_list):
-        self.rule_manager.add_while(while_list, ip_list)  # 正确调用 add_while
+        self.rule_manager.add_while(while_list, ip_list)

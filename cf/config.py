@@ -4,7 +4,7 @@ BASE_URL = 'https://api.cloudflare.com/client/v4'
 DNS_HOST = ["@", "www"]
 DNS_VALUE = "xxx"
 DNS_TYPE = "xxx"
-# 清除缓存和删除dns是用
+# 清除缓存和删除dns 后改为参数控制
 #MATCH_CLEAN_HOST = "xxx"
 # init param
 INIT_PARAM = [
