@@ -1,5 +1,6 @@
 # 全局变量
-BASE_URL = 'https://api.cloudflare.com/client/v4/zones'
+MAX_WORKS=10
+BASE_URL = 'https://api.cloudflare.com/client/v4'
 DNS_HOST = ["@", "www"]
 DNS_VALUE = "xxx"
 DNS_TYPE = "xxx"
