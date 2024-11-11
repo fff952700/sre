@@ -35,7 +35,6 @@ def init_cloudflare():
                 zone_list = [zone for zone in zone_list.json().get('result') if any(domain in zone['name'] for domain in args.domain)]
                 if not zone_list:
                     logger.warning("根据域名过滤条件，未找到匹配的区域。")
-
             # 处理每个 zone
             processor = ZoneProcessor(args,header)
             with ThreadPoolExecutor(max_workers=config.MAX_WORKS) as executor:

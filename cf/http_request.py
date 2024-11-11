@@ -11,13 +11,13 @@ class Header:
                 'Content-Type': 'application/json'
             },
             'No2': {
-                'X-Auth-Email': 'xx',
-                'X-Auth-Key': 'xx',
+                'X-Auth-Email': 'x',
+                'X-Auth-Key': 'x',
                 'Content-Type': 'application/json'
             },
             'No3': {
-                'X-Auth-Email': 'xx',
-                'X-Auth-Key': 'xx',
+                'X-Auth-Email': 'x',
+                'X-Auth-Key': 'x',
                 'Content-Type': 'application/json'
             }
         }
@@ -34,20 +34,38 @@ class Header:
 
     def get_account_info(self, url):
         items = []
-        page = 1
         per_page = 100
+        cursor = None  # 初始化游标为 None
 
         while True:
-            params = {'page': page, 'per_page': per_page}
+            # 构建请求参数
+            params = {'per_page': per_page}
+            if cursor:
+                params['cursor'] = cursor
+            # 发送请求
             response = self.send_request('GET', url, "get_info", params=params)
-            if response and response.status_code == 200:
+            # 检查响应状态
+            if response.status_code == 200:
                 data = response.json()
+                # 获取返回的结果
                 result_items = data.get('result', [])
+                # 添加当前页数据
                 items.extend(result_items)
-                if len(result_items) < per_page:
+                # 获取游标，用于下一次请求
+                result_info = data.get('result_info', {})
+                cursor = result_info.get('cursors', {}).get('after', None)
+                # 如果没有游标，表示数据已经全部加载
+                if not cursor:
+                    print("No more items, pagination complete.")
                     break
-                page += 1
-            else:
-                print("获取区域信息失败。")
+            elif response.status_code == 400:
+                print(f"Bad Request (400): {response.text}")
+                # 打印详细的错误信息来分析问题
                 return []
+
+            else:
+                print(f"Error: Received unexpected status code {response.status_code}.")
+                return []
+
+        print(f"Total items fetched: {len(items)}")
         return items

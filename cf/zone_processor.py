@@ -13,7 +13,7 @@ class ZoneProcessor:
             'del_cache': self.del_cache,
             'add_rule': self.add_rule,
             'add_dns': self.add_dns,
-            'add_parm': self.add_parm,
+            'add_param': self.add_param,
         }
 
     def process_zone(self, zone):
@@ -37,7 +37,7 @@ class ZoneProcessor:
     def add_rule(self, zone):
         self.rule_manager.add_rulesets(zone)
 
-    def add_parm(self, zone):
+    def add_param(self, zone):
         self.rule_manager.add_init_param(zone)
 
     def add_while(self, while_list, ip_list):
