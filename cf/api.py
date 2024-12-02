@@ -1,50 +1,51 @@
 from config import RULE_DATA_MAPPING
 import config
+import threading
 
+# 创建锁
+data_lock = threading.Lock()
 
 class CloudflareAPI:
     def __init__(self, header):
         self.header = header
 
     def add_rulesets(self, zone):
-        # 获取规则集
-        rulesets_url = f"{config.BASE_URL}/zones/{zone['id']}/rulesets"
-        ruleset_result = self.header.send_request("GET", rulesets_url, zone["name"])
+        with data_lock:  # 使用锁保护访问共享资源
+            # 获取规则集
+            rulesets_url = f"{config.BASE_URL}/zones/{zone['id']}/rulesets"
+            ruleset_result = self.header.send_request("GET", rulesets_url, zone["name"])
 
-        for rule in ruleset_result.json().get("result", []):
-            phase = rule["phase"]
-            # 规则集已经存在
-            if phase in config.RULE_DATA_MAPPING:
-                # 获取定义的规则集内容
-                print("1")
-                ruleset_id_url = f"{config.BASE_URL}/zones/{zone['id']}/rulesets/{rule['id']}"
-                ruleset_info = self.header.send_request("GET", ruleset_id_url, zone["name"])
-                rule_descriptions = ruleset_info.json().get("result", {}).get("rules", [])
-                # 检查是否找到相应描述，若未找到则添加或更新
-                expected_desc = config.RULE_DATA_MAPPING.get(phase, {}).get("data", {}).get("rules", [{}])[0].get(
-                    "description")
-                rule_found = False
-                for rule_desc in rule_descriptions:
-                    if rule_desc.get("description") == expected_desc:
-                        print(f"Rule '{expected_desc}' 已存在于 phase '{phase}'")
-                        rule_found = True
-                        break
-                if not rule_found:
-                    print(f"规则 '{expected_desc}' 不存在，执行添加操作")
-                    rules_url = f"{config.BASE_URL}/zones/{zone['id']}/rulesets/{rule['id']}/rules"
-                    self.header.send_request("POST", rules_url, zone["name"],
-                                             data=config.RULE_DATA_MAPPING[phase]["data"]["rules"][0])
+            for rule in ruleset_result.json().get("result", []):
+                phase = rule["phase"]
+                # 规则集已经存在
+                if phase in config.RULE_DATA_MAPPING:
+                    # 获取定义的规则集内容
+                    ruleset_id_url = f"{config.BASE_URL}/zones/{zone['id']}/rulesets/{rule['id']}"
+                    ruleset_info = self.header.send_request("GET", ruleset_id_url, zone["name"])
+                    rule_descriptions = ruleset_info.json().get("result", {}).get("rules", [])
+                    # 检查是否找到相应描述，若未找到则添加或更新
+                    expected_desc = config.RULE_DATA_MAPPING.get(phase, {}).get("data", {}).get("rules", [{}])[0].get(
+                        "description")
+                    rule_found = False
+                    for rule_desc in rule_descriptions:
+                        if rule_desc.get("description") == expected_desc:
+                            print(f"Rule '{expected_desc}' 已存在于 phase '{phase}'")
+                            rule_found = True
+                            continue
+                    if not rule_found:
+                        print(f"规则 '{expected_desc}' 不存在，执行添加操作")
+                        rules_url = f"{config.BASE_URL}/zones/{zone['id']}/rulesets/{rule['id']}/rules"
+                        self.header.send_request("POST", rules_url, zone["name"],
+                                                 data=config.RULE_DATA_MAPPING[phase]["data"]["rules"][0])
 
-                config.RULE_DATA_MAPPING[phase].pop("exists", None)
+                    config.RULE_DATA_MAPPING[phase].pop("exists", None)
 
             # 检查并创建新的规则集（仅当不存在 exists 键时）
-        for phase, rule_info in config.RULE_DATA_MAPPING.items():
-            # 如果 exists 键还存在，则表示规则集未被创建
-            # print("rule_info:",rule_info)
-            if "exists" in rule_info:
-                print(rule_info.get("rule_name"))
-                rule_info.pop("exists", None)  # 移除 exists 键以避免重复创建
-                self.header.send_request("POST", rulesets_url, zone["name"], data=rule_info["data"])
+            for phase, rule_info in config.RULE_DATA_MAPPING.items():
+                if "exists" in rule_info:
+                    print(rule_info.get("rule_name"))
+                    rule_info.pop("exists", None)  # 移除 exists 键以避免重复创建
+                    self.header.send_request("POST", rulesets_url, zone["name"], data=rule_info["data"])
 
     def purge_cache(self, zone):
         url = f"{config.BASE_URL}/zones/{zone['id']}/purge_cache"

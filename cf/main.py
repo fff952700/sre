@@ -1,4 +1,5 @@
 import requests
+import json
 import argparse
 from http_request import Header
 from zone_processor import ZoneProcessor
@@ -25,18 +26,19 @@ def init_cloudflare():
             api.add_while(args.while_list, args.ip_list)
         else:
             # 获取区域列表
-            zone_list = header.send_request("GET", f"{config.BASE_URL}/zones", "get zone")
+            zone_list = header.get_account_info(f"{config.BASE_URL}/zones")
             if not zone_list:
                 logger.warning("未找到任何区域信息，请检查 Cloudflare API 配置是否正确。")
                 return
 
             # 域名过滤
             if args.domain:
-                zone_list = [zone for zone in zone_list.json().get('result') if any(domain in zone['name'] for domain in args.domain)]
+                zone_list = [zone for zone in zone_list if any(domain in zone['name'] for domain in args.domain)]
                 if not zone_list:
                     logger.warning("根据域名过滤条件，未找到匹配的区域。")
-            # 处理每个 zone
-            processor = ZoneProcessor(args,header)
+
+                    # 处理每个 zone
+            processor = ZoneProcessor(args, header)
             with ThreadPoolExecutor(max_workers=config.MAX_WORKS) as executor:
                 futures = {executor.submit(processor.process_zone, zone): zone for zone in zone_list}
 
