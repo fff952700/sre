@@ -15,12 +15,12 @@ class CloudflareAPI:
             rulesets_url = f"{config.BASE_URL}/zones/{zone['id']}/rulesets"
             ruleset_result = self.header.send_request("GET", rulesets_url, zone["name"])
 
-            for rule in ruleset_result.json().get("result", []):
-                phase = rule["phase"]
+            for rulesets in ruleset_result.json().get("result", []):
+                phase = rulesets["phase"]
                 # 规则集已经存在
                 if phase in config.RULE_DATA_MAPPING:
                     # 获取定义的规则集内容
-                    ruleset_id_url = f"{config.BASE_URL}/zones/{zone['id']}/rulesets/{rule['id']}"
+                    ruleset_id_url = f"{config.BASE_URL}/zones/{zone['id']}/rulesets/{rulesets['id']}"
                     ruleset_info = self.header.send_request("GET", ruleset_id_url, zone["name"])
                     rule_descriptions = ruleset_info.json().get("result", {}).get("rules", [])
                     # 检查是否找到相应描述，若未找到则添加或更新
@@ -31,10 +31,15 @@ class CloudflareAPI:
                         if rule_desc.get("description") == expected_desc:
                             print(f"Rule '{expected_desc}' 已存在于 phase '{phase}'")
                             rule_found = True
+                            # if rule_desc.get("description") == "block cn":
+                            #     # 更新防火墙
+                            #     rule_fire_url = f"{config.BASE_URL}/zones/{zone['id']}/rulesets/{rulesets['id']}/rules/{rule_desc.get("id")}"
+                            #     self.header.send_request("PATCH", rule_fire_url, zone["name"],
+                            #                              data=config.RULE_DATA_MAPPING[phase]["data"]["rules"][0])
                             continue
                     if not rule_found:
                         print(f"规则 '{expected_desc}' 不存在，执行添加操作")
-                        rules_url = f"{config.BASE_URL}/zones/{zone['id']}/rulesets/{rule['id']}/rules"
+                        rules_url = f"{config.BASE_URL}/zones/{zone['id']}/rulesets/{rulesets['id']}/rules"
                         self.header.send_request("POST", rules_url, zone["name"],
                                                  data=config.RULE_DATA_MAPPING[phase]["data"]["rules"][0])
 

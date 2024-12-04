@@ -35,13 +35,10 @@ class Header:
     def get_account_info(self, url):
         items = []
         per_page = 100
-        cursor = None  # 初始化游标为 None
-
+        page = 1  # 初始页数1
         while True:
             # 构建请求参数
-            params = {'per_page': per_page}
-            if cursor:
-                params['cursor'] = cursor
+            params = {'page': page, 'per_page': per_page}
             # 发送请求
             response = self.send_request('GET', url, "get_info", params=params)
             # 检查响应状态
@@ -53,16 +50,17 @@ class Header:
                 items.extend(result_items)
                 # 获取游标，用于下一次请求
                 result_info = data.get('result_info', {})
-                cursor = result_info.get('cursors', {}).get('after', None)
-                # 如果没有游标，表示数据已经全部加载
-                if not cursor:
+                total_pages = result_info.get('total_pages')
+                # 判断是否已到最后一页
+                if page >= total_pages:
                     print("No more items, pagination complete.")
                     break
+                # 递增页面索引
+                page += 1
             elif response.status_code == 400:
                 print(f"Bad Request (400): {response.text}")
                 # 打印详细的错误信息来分析问题
                 return []
-
             else:
                 print(f"Error: Received unexpected status code {response.status_code}.")
                 return []
