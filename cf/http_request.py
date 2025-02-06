@@ -32,6 +32,7 @@ class Header:
             return None
         return response
 
+    # 基于page的方式分页
     def get_account_info(self, url):
         items = []
         per_page = 100
@@ -66,4 +67,27 @@ class Header:
                 return []
 
         print(f"Total items fetched: {len(items)}")
+        return items
+
+    # 基于游标的方式分页
+    def get_account_items(self, url):
+        items = []
+        per_page = 50
+        params = {'per_page': per_page}
+        while True:
+            response = self.send_request('GET', url, "get_info", params=params)
+            if response.status_code == 200:
+                data = response.json()
+                result_items = data.get('result', [])
+                items.extend(result_items)
+                # 从响应中获取下一页的游标
+                after = data.get('result_info', {}).get('cursors', {}).get('after')
+                # 如果没有下一页的游标，则退出循环
+                if after is None:
+                    break
+                # 更新请求参数，注意参数名称使用cursor而不是after
+                params = {'per_page': per_page, 'cursor': after}
+            else:
+                # 处理非200响应情况
+                break
         return items

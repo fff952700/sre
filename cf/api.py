@@ -5,6 +5,7 @@ import threading
 # 创建锁
 data_lock = threading.Lock()
 
+
 class CloudflareAPI:
     def __init__(self, header):
         self.header = header
@@ -132,7 +133,7 @@ class CloudflareAPI:
         target_list = self.get_target_list(account_id, while_list)
         if not target_list:
             return
-        existing_ips = self.header.get_account_info(
+        existing_ips = self.header.get_account_items(
             f"{config.BASE_URL}/accounts/{account_id}/rules/lists/{target_list['id']}/items")
         if existing_ips is None:
             return
